@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cazahuevos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: una sola columna estrecha, tipo panel de juego. Cabecera, filtros, tarjeta del huevo líder y lista de servidores con barra proporcional al tamaño. */
+:root {
+  --bg: #0a1226;
+  --panel: #111b36;
+  --row: #17234a;
+  --line: #26376a;
+  --fg: #eef2ff;
+  --muted: #8f9cc6;
+  --accent: #ff9d1c;
+  --accent-fg: #1b1000;
+  --good: #3ddc97;
+  --warn: #ffc53d;
+  --bad: #ff5d6c;
+  --r-common: #9aa5c4;
+  --r-uncommon: #5fd16a;
+  --r-rare: #4da3ff;
+  --r-epic: #b06cff;
+  --r-legendary: #ffb020;
+  --r-mythic: #ff5fa2;
+  --r-cosmic: #7f8bff;
+  --r-secret: #ff6b4a;
+  --r-eternal: #dfe4f7;
+  --r-divine: #3de0d0;
+  --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
+  --font-body: 'DM Sans', system-ui, sans-serif;
+  --font-mono: 'DM Mono', ui-monospace, monospace;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f1f4fb; --panel: #ffffff; --row: #eff2fb; --line: #d5dcf0;
+    --fg: #111a33; --muted: #566290;
+    --good: #12875a; --warn: #a86b00; --bad: #cc3047;
+    --r-common: #626d92; --r-uncommon: #1e8f3a; --r-rare: #1f6fd1; --r-epic: #7b3fd6;
+    --r-legendary: #b06d00; --r-mythic: #c42a76; --r-cosmic: #4452d6; --r-secret: #cc3d1f;
+    --r-eternal: #6a7194; --r-divine: #0b8c7f;
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #f1f4fb; --panel: #ffffff; --row: #eff2fb; --line: #d5dcf0;
+  --fg: #111a33; --muted: #566290;
+  --good: #12875a; --warn: #a86b00; --bad: #cc3047;
+  --r-common: #626d92; --r-uncommon: #1e8f3a; --r-rare: #1f6fd1; --r-epic: #7b3fd6;
+  --r-legendary: #b06d00; --r-mythic: #c42a76; --r-cosmic: #4452d6; --r-secret: #cc3d1f;
+  --r-eternal: #6a7194; --r-divine: #0b8c7f;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background:
+    radial-gradient(60rem 28rem at 85% -10%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 70%),
+    radial-gradient(50rem 26rem at -10% 10%, color-mix(in srgb, var(--r-rare) 12%, transparent), transparent 70%),
+    var(--bg);
+  background-color: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.4;
+  padding-block: 18px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  font-variant-numeric: tabular-nums;
+}
+button, select, input { font: inherit; color: inherit; }
+.app { max-width: 560px; margin: 0 auto; display: grid; gap: 14px; }
+
+/* Cabecera */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.brand svg { width: 28px; height: 32px; color: var(--accent); flex: none; }
+.brand h1 { margin: 0; font: 800 24px/1 var(--font-display); letter-spacing: -0.01em; }
+.brand small { display: block; margin-top: 3px; font: 500 11px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.live { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--good); box-shadow: 0 0 0 0 color-mix(in srgb, var(--good) 60%, transparent); animation: pulse 2s infinite; }
+@keyframes pulse { 70% { box-shadow: 0 0 0 7px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
+.demo { font: 500 11px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; padding: 3px 7px; border-radius: 6px; border: 1px solid var(--warn); color: var(--warn); }
+
+/* Panel */
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 12px; display: grid; gap: 12px; }
+.controls { display: grid; gap: 10px; }
+.row-a { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.tabs { display: inline-flex; background: var(--row); border-radius: 10px; padding: 3px; gap: 2px; }
+.tab { border: 0; background: transparent; color: var(--muted); padding: 7px 14px; border-radius: 8px; cursor: pointer; font-weight: 700; }
+.tab[aria-selected="true"] { background: var(--accent); color: var(--accent-fg); }
+.selects { display: flex; gap: 8px; flex-wrap: wrap; }
+select { background: var(--row); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; min-width: 0; max-width: 100%; flex: 1 1 140px; }
+.chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: thin; }
+.chip { flex: none; border: 1px solid var(--line); background: transparent; color: var(--muted); padding: 5px 11px; border-radius: 999px; cursor: pointer; font-weight: 500; font-size: 13px; }
+.chip[aria-pressed="true"] { color: var(--fg); border-color: var(--rc, var(--accent)); background: color-mix(in srgb, var(--rc, var(--accent)) 20%, transparent); }
+.chip i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--rc); margin-right: 6px; }
+.slider { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); }
+.slider input { flex: 1; min-width: 0; accent-color: var(--accent); }
+.slider output { font-family: var(--font-mono); color: var(--fg); min-width: 3.4em; text-align: right; }
+
+/* Tarjeta del huevo líder */
+.summary { display: flex; align-items: center; gap: 12px; background: var(--row); border: 1px solid var(--line); border-radius: 14px; padding: 12px; }
+.summary .egg { width: 44px; height: 52px; flex: none; color: var(--rc); }
+.summary .info { flex: 1; min-width: 0; }
+.summary .zone { font: 500 11px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--rc); margin-bottom: 3px; }
+.summary h2 { margin: 0; font: 800 20px/1.1 var(--font-display); overflow-wrap: anywhere; }
+.summary .sub { color: var(--muted); font-size: 13px; margin-top: 3px; }
+.summary .best { text-align: right; flex: none; display: grid; gap: 4px; justify-items: end; }
+.best small { display: block; font: 500 10px var(--font-mono); letter-spacing: .1em; color: var(--muted); }
+.best b { font: 800 26px/1.1 var(--font-display); color: var(--accent); }
+
+/* Lista */
+.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; }
+.row { position: relative; isolation: isolate; overflow: hidden; background: var(--row); border-radius: 12px; padding: 10px 10px 10px 14px; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; }
+.row::before { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--w); background: color-mix(in srgb, var(--rc) 24%, transparent); z-index: -1; }
+.row.top { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--rc) 70%, transparent); }
+.l1 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.mult { font: 800 22px/1 var(--font-display); }
+.bps { font: 500 12px var(--font-mono); padding: 3px 7px; border-radius: 7px; background: color-mix(in srgb, var(--rc) 28%, var(--panel)); white-space: nowrap; }
+.l2 { display: flex; gap: 14px; margin-top: 5px; font-size: 13px; color: var(--muted); flex-wrap: wrap; }
+.l2 span { display: inline-flex; align-items: center; gap: 5px; }
+.l2 svg { width: 13px; height: 13px; }
+.ename { font-size: 13px; color: var(--muted); }
+.t-ok { color: var(--good); } .t-mid { color: var(--warn); } .t-low { color: var(--bad); }
+.join { background: var(--accent); color: var(--accent-fg); border: 0; border-radius: 10px; padding: 11px 18px; font-weight: 700; text-decoration: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 0 color-mix(in srgb, var(--accent) 60%, #000); }
+.join:active { transform: translateY(1px); box-shadow: none; }
+.more { width: 100%; background: transparent; border: 1px dashed var(--line); color: var(--muted); padding: 10px; border-radius: 12px; cursor: pointer; }
+.empty { text-align: center; color: var(--muted); padding: 28px 12px; }
+.note { color: var(--muted); font-size: 12px; text-align: center; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+#toast { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 20px); max-width: min(92vw, 420px); background: var(--fg); color: var(--bg); padding: 10px 14px; border-radius: 12px; font-size: 14px; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 20; }
+#toast.show { opacity: 1; transform: translate(-50%, 0); }
+@media (prefers-reduced-motion: reduce) { .dot { animation: none; } #toast { transition: none; } }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 48 56" aria-hidden="true"><path d="M24 3C14 3 6 20 6 33c0 12 8 20 18 20s18-8 18-20C42 20 34 3 24 3z" fill="currentColor"/><ellipse cx="17" cy="22" rx="4" ry="8" fill="#fff" opacity=".35" transform="rotate(20 17 22)"/></svg>
+      <div><h1>Cazahuevos</h1><small>Roba un Huevo</small></div>
+    </div>
+    <div class="live"><span class="dot"></span><span id="count">0 servidores</span><span class="demo" id="demoTag">Demo</span></div>
+  </header>
+
+  <main class="panel">
+    <div class="controls">
+      <div class="row-a">
+        <div class="tabs" role="tablist" aria-label="Vista">
+          <button class="tab" role="tab" id="tabLive" aria-selected="true">En vivo</button>
+          <button class="tab" role="tab" id="tabHist" aria-selected="false">Historial</button>
+        </div>
+      </div>
+      <div class="selects">
+        <select id="eggSel" aria-label="Huevo"></select>
+        <select id="zoneSel" aria-label="Zona"></select>
+        <select id="sortSel" aria-label="Ordenar por">
+          <option value="bps">Generación</option>
+          <option value="mult">Tamaño</option>
+          <option value="recent">Reciente</option>
+        </select>
+      </div>
+      <div class="chips" id="chips" role="group" aria-label="Rareza"></div>
+      <label class="slider" for="minRange">Tamaño mínimo
+        <input type="range" id="minRange" min="1" max="7" step="0.5" value="1">
+        <output id="minOut" for="minRange">×1.0</output>
+      </label>
+    </div>
+
+    <div id="summary"></div>
+    <ul class="list" id="list"></ul>
+  </main>
+
+  <p class="note" id="note"></p>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ---- Configuración ----
+   placeId: ID de Roba un Huevo en Roblox (está en la URL del juego, roblox.com/games/ID/...). Con 0 el botón solo muestra un aviso.
+   dataUrl: dirección de tu propio JSON con los servidores. Vacío = datos de demostración.
+   Formato del JSON: { "servers": [ { id, pet, rarity, zone, mult, income, bornAt, expiresAt, players, max } ] }
+   mult = tamaño (×6.89), income = ingreso por segundo en número plano (533e9), bornAt/expiresAt en milisegundos. */
+const CONFIG = { placeId: 107778070777162, dataUrl: 'servers.json', pollMs: 5000 };
+
+/* Rarezas de Roba un Huevo, de menor a mayor */
+const RAR = {
+  common: 'Common', uncommon: 'Uncommon', rare: 'Rare', epic: 'Epic', legendary: 'Legendary',
+  mythic: 'Mythic', cosmic: 'Cosmic', secret: 'Secret', eternal: 'Eternal', divine: 'Divine'
+};
+const RAR_KEYS = Object.keys(RAR);
+
+/* Mascotas con su rareza e ingreso base por segundo (datos de guías de la comunidad, pueden cambiar con las actualizaciones).
+   'H' = Halloween Dimension: las guías no dicen en qué zona sale cada una, así que en la demo se reparten entre sus tres zonas.
+   Voidseer Pumpkin va en Abandoned Manor porque así aparece en la captura. */
+const HZONES = ['Abandoned Manor', 'Graveyard', 'Haunted Swamp'];
+const PETS = [
+  ['Whiskers', 'epic', 2e3, 'H'], ['Jesterpop', 'legendary', 40e3, 'H'], ['Hooded Gerbil', 'legendary', 300e3, 'H'],
+  ['Mimic Chest', 'legendary', 600e3, 'H'], ['Candlefang', 'mythic', 225e3, 'H'], ['Toadstool', 'mythic', 1.6e6, 'H'],
+  ['Crowshade', 'mythic', 4.5e6, 'H'], ['Spirit Knight', 'cosmic', 3e6, 'H'], ['Patchwork Imp', 'cosmic', 20e6, 'H'],
+  ['Haunted Scorpio', 'cosmic', 30e6, 'H'], ['Hexed Pumpkin', 'cosmic', 150e6, 'H'], ['Graveyard Brute', 'secret', 75e6, 'H'],
+  ['BloodBloom', 'secret', 450e6, 'H'], ['Werewolf', 'secret', 1.3e9, 'H'], ['Ghost Reaper', 'eternal', 300e6, 'H'],
+  ['Shelltide Voyager', 'eternal', 1.6e9, 'H'], ['Abomination Kong', 'eternal', 3.5e9, 'H'],
+  ['Voidseer Pumpkin', 'divine', 14e9, 'Abandoned Manor'], ['Zombified Bone Emperor', 'divine', 14e9, 'H'],
+  ['Spirit World Guardian', 'divine', 15e9, 'Enchanted Forest'], ['Royal Skywhale', 'divine', 8e9, 'Enchanted Forest'],
+  ['Leviathan', 'cosmic', 220e3, 'Lake'], ['Royal Sphinx', 'cosmic', 280e3, 'Desert'],
+  ['Sand Spider', 'mythic', 16e3, 'Desert'], ['Scorpion', 'mythic', 18.5e3, 'Desert'],
+  ['Brr Brr Patapim', 'legendary', 1.8e3, 'Forest'], ['Axolotl', 'legendary', 2.8e3, 'Lake'], ['Snake', 'legendary', 3.6e3, 'Desert']
+].map(([name, rarity, base, zone]) => ({ name, rarity, base, zone, target: 14 + Math.floor(Math.random() * 46) }));
+
+const LIFE = 300000; /* un huevo dura unos 5 min en el servidor (supuesto) */
+const MAXP = 7;
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const uid = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); });
+const fmtN = n => Number(n).toLocaleString('es');
+const fmtT = s => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+const ago = ms => { const s = Math.max(0, Math.floor(ms / 1000)); return s < 60 ? 'hace ' + s + ' s' : 'hace ' + Math.floor(s / 60) + ' min'; };
+const rk = r => (RAR[r] ? r : 'common');
+const rc = r => 'var(--r-' + rk(r) + ')';
+function fmtInc(v) {
+  const u = [[1e12, 'T'], [1e9, 'B'], [1e6, 'M'], [1e3, 'K']].find(x => v >= x[0]);
+  const n = u ? v / u[0] : v;
+  const s = n >= 100 ? n.toFixed(0) : n >= 10 ? n.toFixed(1) : n.toFixed(2);
+  return (u ? s + ' ' + u[1] : s) + '/s';
+}
+
+const eggSvg = () => '<svg class="egg" viewBox="0 0 48 56" aria-hidden="true"><path d="M24 3C14 3 6 20 6 33c0 12 8 20 18 20s18-8 18-20C42 20 34 3 24 3z" fill="currentColor"/><ellipse cx="17" cy="22" rx="4" ry="8" fill="#fff" opacity=".35" transform="rotate(20 17 22)"/><circle cx="30" cy="36" r="2.6" fill="#000" opacity=".18"/><circle cx="21" cy="42" r="1.8" fill="#000" opacity=".18"/><circle cx="31" cy="26" r="1.6" fill="#000" opacity=".18"/></svg>';
+const clockSvg = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M8 4.5V8l2.4 1.6"/></svg>';
+const userSvg = '<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><circle cx="8" cy="5.2" r="2.8"/><path d="M2.5 14c.4-3 2.6-4.6 5.5-4.6s5.1 1.6 5.5 4.6z"/></svg>';
+
+const state = { tab: 'live', egg: 'all', zone: 'all', rarity: 'all', minMult: 1, sort: 'bps', limit: 40 };
+let servers = [], history = [], dirty = true, pointerDown = false, lastRender = 0;
+
+/* ---- Datos de demostración ---- */
+function spawn(p, elapsedMs) {
+  const mult = +(1 + 6.4 * Math.pow(Math.random(), 2.4)).toFixed(2);
+  const born = Date.now() - elapsedMs;
+  return {
+    id: uid(), pet: p.name, rarity: p.rarity, zone: p.zone === 'H' ? pick(HZONES) : p.zone, mult,
+    income: Math.round(p.base * Math.pow(mult, 1.7) * 1.5), /* aproximación ajustada a la captura, solo para la demo */
+    players: 1 + Math.floor(Math.random() * (MAXP - 1)), max: MAXP, bornAt: born, expiresAt: born + LIFE
+  };
+}
+function seedDemo() {
+  PETS.forEach(p => { for (let i = 0; i < p.target; i++) servers.push(spawn(p, Math.random() * (LIFE - 10000))); });
+}
+
+/* ---- Fuente real (JSON propio) ---- */
+async function pull() {
+  try {
+    const r = await fetch(CONFIG.dataUrl, { cache: 'no-store' });
+    const j = await r.json();
+    const list = Array.isArray(j) ? j : j.servers;
+    if (!Array.isArray(list)) return;
+    const now = Date.now();
+    const next = list.map(s => {
+      const born = Number(s.bornAt) || now;
+      return {
+        id: String(s.id), pet: String(s.pet || 'Huevo'), rarity: rk(String(s.rarity || '').toLowerCase()), zone: String(s.zone || ''),
+        mult: Number(s.mult) || 0, income: Number(s.income) || 0, players: Number(s.players) || 0, max: Number(s.max) || MAXP,
+        bornAt: born, expiresAt: Number(s.expiresAt) || born + LIFE
+      };
+    });
+    const ids = new Set(next.map(s => s.id));
+    servers.filter(s => !ids.has(s.id)).forEach(s => history.unshift({ ...s, endedAt: now }));
+    servers = next; dirty = true;
+    buildSelects();
+  } catch (e) { /* se reintenta en el siguiente ciclo */ }
+}
+
+/* ---- Filtros ---- */
+function visible() {
+  const l = servers.filter(s => s.mult >= state.minMult && (state.egg === 'all' || s.pet === state.egg) &&
+    (state.zone === 'all' || s.zone === state.zone) && (state.rarity === 'all' || s.rarity === state.rarity));
+  const key = { bps: s => s.income, mult: s => s.mult, recent: s => s.bornAt }[state.sort];
+  return l.sort((a, b) => key(b) - key(a));
+}
+
+function render() {
+  lastRender = Date.now(); dirty = false;
+  $('#count').textContent = fmtN(servers.length) + ' servidores';
+  const list = $('#list'), sum = $('#summary');
+  if (state.tab === 'hist') {
+    sum.innerHTML = '';
+    const h = history.filter(s => (state.egg === 'all' || s.pet === state.egg) && (state.rarity === 'all' || s.rarity === state.rarity) && (state.zone === 'all' || s.zone === state.zone));
+    list.innerHTML = h.length ? h.slice(0, 40).map(s => `
+      <li class="row" style="--w:0%;--rc:${rc(s.rarity)}">
+        <div><div class="l1"><span class="mult">×${s.mult.toFixed(2)}</span><span class="bps">${fmtInc(s.income)}</span></div>
+        <div class="l2"><span>${esc(s.pet)}</span>${s.zone ? `<span>${esc(s.zone)}</span>` : ''}<span data-ended="${s.endedAt}">${ago(Date.now() - s.endedAt)}</span></div></div>
+      </li>`).join('') : '<li class="empty">Aún no ha expirado ningún servidor en esta sesión.</li>';
+    return;
+  }
+  const l = visible();
+  const bestS = l.reduce((m, s) => (!m || s.mult > m.mult ? s : m), null);
+  const pet = PETS.find(p => p.name === state.egg);
+  const topRar = pet ? pet.rarity : (l[0] ? l[0].rarity : 'common');
+  const zoneLbl = state.egg !== 'all' && l[0] ? l[0].zone : (state.zone !== 'all' ? state.zone : '');
+  sum.innerHTML = `<div class="summary" style="--rc:${rc(topRar)}">${eggSvg()}
+    <div class="info">${zoneLbl ? `<div class="zone">${esc(zoneLbl)}</div>` : ''}<h2>${esc(state.egg === 'all' ? 'Todos los huevos' : state.egg)}</h2>
+    <div class="sub">${state.egg !== 'all' ? esc(RAR[topRar]) + ' · ' : ''}${fmtN(l.length)} ${l.length === 1 ? 'servidor' : 'servidores'}</div></div>
+    <div class="best"><small>MAYOR</small><b>${bestS ? '×' + bestS.mult.toFixed(2) : '–'}</b>${bestS ? `<span class="bps" style="--rc:${rc(bestS.rarity)}">${fmtInc(bestS.income)}</span>` : ''}</div></div>`;
+  if (!l.length) { list.innerHTML = '<li class="empty">Ningún servidor cumple estos filtros. Baja el tamaño mínimo o elige otra rareza.</li>'; return; }
+  const max = bestS ? bestS.mult : 1;
+  const shown = l.slice(0, state.limit);
+  list.innerHTML = shown.map((s, i) => `
+    <li class="row${i === 0 ? ' top' : ''}" style="--w:${Math.max(6, s.mult / max * 100).toFixed(1)}%;--rc:${rc(s.rarity)}">
+      <div>
+        <div class="l1"><span class="mult">×${s.mult.toFixed(2)}</span><span class="bps">${fmtInc(s.income)}</span>${state.egg === 'all' ? `<span class="ename">${esc(s.pet)}</span>` : ''}</div>
+        <div class="l2"><span class="ttl" data-born="${s.bornAt}" title="Tiempo desde que apareció">${clockSvg}<b></b></span><span>${userSvg}${s.players}/${s.max}</span>${s.zone ? `<span>${esc(s.zone)}</span>` : ''}</div>
+      </div>
+      <a class="join" data-id="${esc(s.id)}" href="${live && CONFIG.placeId ?'https://www.roblox.com/games/start?placeId=' + encodeURIComponent(CONFIG.placeId) + '&gameInstanceId=' + encodeURIComponent(s.id) : '#'}" target="_blank" rel="noopener">Unirse</a>
+    </li>`).join('') + (l.length > shown.length ? `<li><button class="more" id="more">Ver ${fmtN(l.length - shown.length)} más</button></li>` : '');
+  updateTimers();
+}
+
+/* El cronómetro cuenta desde que apareció el huevo: verde al inicio, rojo cerca de expirar. */
+function updateTimers() {
+  const now = Date.now();
+  document.querySelectorAll('[data-born]').forEach(el => {
+    const s = Math.max(0, Math.floor((now - +el.dataset.born) / 1000));
+    el.querySelector('b').textContent = fmtT(s);
+    el.className = 'ttl ' + (s < 120 ? 't-ok' : s < 210 ? 't-mid' : 't-low');
+  });
+  document.querySelectorAll('[data-ended]').forEach(el => { el.textContent = ago(now - +el.dataset.ended); });
+}
+
+function tick() {
+  const now = Date.now();
+  for (let i = servers.length - 1; i >= 0; i--) {
+    if (servers[i].expiresAt <= now) { history.unshift({ ...servers.splice(i, 1)[0], endedAt: now }); dirty = true; }
+  }
+  if (history.length > 60) history.length = 60;
+  if (!CONFIG.dataUrl) {
+    const counts = {};
+    servers.forEach(s => { counts[s.pet] = (counts[s.pet] || 0) + 1; });
+    PETS.forEach(p => {
+      if ((counts[p.name] || 0) < p.target && Math.random() < 0.5) { servers.push(spawn(p, 0)); dirty = true; }
+    });
+  }
+  if (dirty && !pointerDown && now - lastRender > 1500) render(); else updateTimers();
+}
+
+/* ---- Interfaz ---- */
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove('show'), 3200);
+}
+function buildSelects() {
+  const names = new Map();
+  PETS.forEach(p => names.set(p.name, { rarity: p.rarity, base: p.base }));
+  servers.forEach(s => { if (!names.has(s.pet)) names.set(s.pet, { rarity: s.rarity, base: s.income }); });
+  const groups = RAR_KEYS.slice().reverse().map(k => {
+    const items = [...names].filter(([, v]) => v.rarity === k).sort((a, b) => b[1].base - a[1].base);
+    return items.length ? `<optgroup label="${RAR[k]}">${items.map(([n]) => `<option value="${esc(n)}">${esc(n)}</option>`).join('')}</optgroup>` : '';
+  }).join('');
+  $('#eggSel').innerHTML = '<option value="all">Todos los huevos</option>' + groups;
+  $('#eggSel').value = state.egg;
+  const zones = new Set(HZONES);
+  PETS.forEach(p => { if (p.zone !== 'H') zones.add(p.zone); });
+  servers.forEach(s => { if (s.zone) zones.add(s.zone); });
+  $('#zoneSel').innerHTML = '<option value="all">Todas las zonas</option>' + [...zones].map(z => `<option value="${esc(z)}">${esc(z)}</option>`).join('');
+  $('#zoneSel').value = state.zone;
+}
+function buildChips() {
+  $('#chips').innerHTML = [['all', 'Todas']].concat(RAR_KEYS.slice().reverse().map(k => [k, RAR[k]]))
+    .map(([k, n]) => `<button class="chip" data-r="${k}" aria-pressed="${k === 'all'}" style="--rc:${k === 'all' ? 'var(--accent)' : rc(k)}">${k === 'all' ? '' : '<i></i>'}${n}</button>`).join('');
+}
+function setTab(t) {
+  state.tab = t; state.limit = 40;
+  $('#tabLive').setAttribute('aria-selected', t === 'live');
+  $('#tabHist').setAttribute('aria-selected', t === 'hist');
+  render();
+}
+function resetChips() { document.querySelectorAll('.chip').forEach(c => c.setAttribute('aria-pressed', c.dataset.r === state.rarity)); }
+$('#tabLive').onclick = () => setTab('live');
+$('#tabHist').onclick = () => setTab('hist');
+$('#eggSel').onchange = e => { state.egg = e.target.value; state.rarity = 'all'; state.zone = 'all'; state.limit = 40; $('#zoneSel').value = 'all'; resetChips(); render(); };
+$('#zoneSel').onchange = e => { state.zone = e.target.value; state.limit = 40; render(); };
+$('#sortSel').onchange = e => { state.sort = e.target.value; render(); };
+$('#minRange').oninput = e => { state.minMult = +e.target.value; $('#minOut').textContent = '×' + state.minMult.toFixed(1); state.limit = 40; render(); };
+$('#chips').onclick = e => {
+  const b = e.target.closest('.chip'); if (!b) return;
+  state.rarity = b.dataset.r; state.egg = 'all'; state.limit = 40; $('#eggSel').value = 'all'; resetChips(); render();
+};
+$('#list').addEventListener('click', e => {
+  if (e.target.closest('#more')) { state.limit += 40; render(); return; }
+  const j = e.target.closest('.join'); if (!j) return;
+  try { navigator.clipboard.writeText(j.dataset.id).catch(() => {}); } catch (err) { /* sin portapapeles */ }
+  if (!live || !CONFIG.placeId) { e.preventDefault(); toast('Modo demostración: falta el ID de Roba un Huevo y una fuente de datos real.'); }
+  else toast('ID del servidor copiado. Si Roblox no se abre, pégalo en tu lanzador.');
+});
+document.addEventListener('pointerdown', () => { pointerDown = true; });
+['pointerup', 'pointercancel'].forEach(ev => document.addEventListener(ev, () => { pointerDown = false; }));
+
+/* ---- Arranque ---- */
+const live = !!CONFIG.dataUrl;
+$('#demoTag').hidden = live;
+$('#note').textContent = (live ? '' : 'Datos de demostración generados al azar. ') + 'Herramienta de fans de Roba un Huevo, sin relación con el juego ni con Roblox.';
+buildChips();
+if (live) { buildSelects(); pull(); setInterval(pull, CONFIG.pollMs); } else { seedDemo(); buildSelects(); }
+render();
+setInterval(tick, 1000);
+</script>
+
+</body>
+</html>

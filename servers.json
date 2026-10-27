@@ -1,0 +1,40 @@
+{
+  "servers": [
+    {
+      "id": "3f2c1a9e-7b44-4d0a-9c1e-5a8d2e6f1b01",
+      "pet": "Voidseer Pumpkin",
+      "rarity": "divine",
+      "zone": "Abandoned Manor",
+      "mult": 6.89,
+      "income": 533000000000,
+      "players": 2,
+      "max": 7,
+      "bornAt": 1793126869286,
+      "expiresAt": 4102444800000
+    },
+    {
+      "id": "a91b7d30-2c5e-4f18-8e3a-0d6b4c9e7f02",
+      "pet": "Spirit World Guardian",
+      "rarity": "divine",
+      "zone": "Enchanted Forest",
+      "mult": 5.12,
+      "income": 374000000000,
+      "players": 2,
+      "max": 7,
+      "bornAt": 1793126869286,
+      "expiresAt": 4102444800000
+    },
+    {
+      "id": "c47e8f52-1a9d-4b36-b7c0-3e2f5a8d6c03",
+      "pet": "Hexed Pumpkin",
+      "rarity": "cosmic",
+      "zone": "Graveyard",
+      "mult": 3.49,
+      "income": 187000000000,
+      "players": 3,
+      "max": 7,
+      "bornAt": 1793126869286,
+      "expiresAt": 4102444800000
+    }
+  ]
+}
